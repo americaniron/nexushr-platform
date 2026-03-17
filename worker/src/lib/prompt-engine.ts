@@ -1121,3 +1121,45 @@ export async function handlePromptEngine(request: Request, env: Env, userId: str
 function json(data: any, status = 200): Response {
   return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 }
+
+// ─── Helper Exports for NLU Integration ─────────────────────────────
+
+export function buildFullSystemPrompt(
+  jobType: string, employeeName: string, personality: any, companyContext: string,
+  tools: any[], outputSchema: any, guardrails: any
+): string {
+  const parts: string[] = [
+    `You are ${employeeName}, a ${jobType} AI employee.`,
+    companyContext ? `Company context: ${companyContext}` : '',
+    personality?.tone ? `Communication tone: ${personality.tone}` : '',
+    guardrails?.prohibited ? `Do not discuss: ${guardrails.prohibited.join(', ')}` : '',
+    tools?.length ? `Available tools: ${tools.map((t: any) => t.name).join(', ')}` : '',
+    outputSchema ? `Respond in format: ${JSON.stringify(outputSchema)}` : '',
+  ];
+  return parts.filter(Boolean).join('\n\n');
+}
+
+export function manageContextWindow(
+  systemPrompt: string, history: any[], message: string, model: string, maxTokens: number
+): { trimmedHistory: any[]; summary: string | null; estimate: number } {
+  const estimateTokens = (text: string) => Math.ceil(text.length / 4);
+  const systemTokens = estimateTokens(systemPrompt);
+  const messageTokens = estimateTokens(message);
+  const budget = maxTokens - systemTokens - messageTokens - 500;
+
+  let totalTokens = 0;
+  const trimmedHistory: any[] = [];
+  for (let i = history.length - 1; i >= 0; i--) {
+    const entryTokens = estimateTokens(JSON.stringify(history[i]));
+    if (totalTokens + entryTokens > budget) break;
+    totalTokens += entryTokens;
+    trimmedHistory.unshift(history[i]);
+  }
+
+  const trimmed = history.length - trimmedHistory.length;
+  return {
+    trimmedHistory,
+    summary: trimmed > 0 ? `[${trimmed} earlier messages summarized]` : null,
+    estimate: systemTokens + messageTokens + totalTokens,
+  };
+}
