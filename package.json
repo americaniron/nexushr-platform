@@ -1,0 +1,19 @@
+{
+  "name": "nexushr-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NexusHR AI Workforce Platform — Enterprise SaaS with 35 feature modules",
+  "scripts": {
+    "dev:worker": "cd worker && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:frontend": "cd frontend && npm run build",
+    "typecheck": "cd worker && npx tsc --noEmit",
+    "deploy": "cd worker && npm run deploy",
+    "scan": "node scripts/performance-scan.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/americaniron/nexushr-platform.git"
+  },
+  "license": "MIT"
+}

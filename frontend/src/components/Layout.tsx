@@ -1,0 +1,198 @@
+import { useState, type ReactNode } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { ACTIVITY_FEED } from '../data/constants';
+
+export function Navbar() {
+  const auth = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [dropOpen, setDropOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifCount, setNotifCount] = useState(3);
+
+  const isHome = location.pathname === '/';
+
+  return (
+    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${isHome ? 'bg-transparent' : 'bg-white/80 backdrop-blur-xl border-b border-gray-200/60'}`}
+      style={{ ...(isHome ? {} : { WebkitBackdropFilter: 'blur(20px)' }) }}>
+      <div className="max-w-7xl mx-auto px-5 sm:px-8 flex items-center justify-between h-[68px]">
+        {/* Logo */}
+        <button onClick={() => navigate('/')} className="flex items-center gap-2.5 cursor-pointer bg-transparent border-none group">
+          <span className={`hc text-xl tracking-wider ${isHome ? 'text-white' : 'text-black'}`} style={{ letterSpacing: '3px' }}>NEXUSHR</span>
+          <span className="text-[10px] font-bold bg-[#FBCC00] text-[#0F0F0F] px-2 py-0.5 rounded-full">AI</span>
+        </button>
+
+        {/* Desktop Nav */}
+        <div className="hidden md:flex items-center gap-1">
+          {[
+            { label: 'AI Employees', path: '/catalog' },
+            { label: 'Pricing', path: '/pricing' },
+            ...(auth.isLoggedIn ? [
+              { label: 'Dashboard', path: '/dashboard' },
+              { label: 'Integrations', path: '/integrations' },
+              { label: 'Agents', path: '/agents' },
+              { label: 'Voice', path: '/voice' },
+              { label: 'Employee Hub', path: '/employee-hub' },
+              { label: 'Settings', path: '/settings' },
+            ] : []),
+            ...(auth.isAdmin ? [{ label: 'Admin', path: '/admin' }] : []),
+          ].map(l => (
+            <button key={l.path} onClick={() => navigate(l.path)}
+              className={`px-4 py-2 rounded-lg text-[14px] font-medium bg-transparent border-none cursor-pointer transition-all ${
+                location.pathname === l.path
+                  ? (isHome ? 'text-white bg-white/10' : 'text-black bg-gray-100')
+                  : (isHome ? 'text-gray-300 hover:text-white hover:bg-white/[.06]' : 'text-gray-500 hover:text-black hover:bg-gray-50')
+              }`}>{l.label}</button>
+          ))}
+        </div>
+
+        {/* Right Side */}
+        <div className="hidden md:flex items-center gap-3">
+          <button className={`flex items-center gap-2 px-3 py-1.5 text-xs border rounded-lg cursor-pointer transition-all ${
+            isHome ? 'border-white/10 text-gray-400 bg-white/[.04] hover:bg-white/[.08]' : 'border-gray-200 text-gray-400 bg-white hover:bg-gray-50'
+          }`} title="Cmd+K">
+            <span>Search</span><kbd className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${isHome ? 'bg-white/10 text-gray-400' : 'bg-gray-100 text-gray-500'}`}>⌘K</kbd>
+          </button>
+
+          {auth.isLoggedIn && (
+            <div className="relative">
+              <button onClick={() => { setNotifOpen(!notifOpen); setNotifCount(0); }} className={`relative p-2 bg-transparent border-none cursor-pointer transition-colors ${isHome ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-black'}`}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                {notifCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">{notifCount}</span>}
+              </button>
+              {notifOpen && (
+                <div className="absolute right-0 top-12 w-80 bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden">
+                  <div className="p-4 border-b border-gray-100 font-bold text-sm">Notifications</div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {ACTIVITY_FEED.slice(0, 4).map(a => (
+                      <div key={a.id} className="px-4 py-3 border-b border-gray-50 hover:bg-gray-50 flex items-start gap-3 transition-colors">
+                        <span className="text-base mt-0.5">{a.icon}</span>
+                        <div><p className="text-xs text-gray-700 leading-relaxed">{a.message}</p><p className="text-[10px] text-gray-400 mt-1">{a.time}</p></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {!auth.isLoggedIn ? (
+            <>
+              <button onClick={() => navigate('/login')} className={`text-[14px] font-medium bg-transparent border-none cursor-pointer transition-colors ${isHome ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-black'}`}>Log In</button>
+              <button onClick={() => navigate('/signup')} className="btn-gold text-xs px-5 py-2.5">Get Started</button>
+            </>
+          ) : (
+            <div className="relative">
+              <button onClick={() => setDropOpen(!dropOpen)} className="flex items-center gap-2.5 bg-transparent border-none cursor-pointer">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs text-black" style={{ background: 'linear-gradient(135deg, #FBCC00, #FDE68A)' }}>{auth.user?.name?.[0]}</div>
+                <span className={`text-sm font-medium ${isHome ? 'text-gray-200' : 'text-gray-700'}`}>{auth.user?.name}</span>
+              </button>
+              {dropOpen && (
+                <div className="absolute right-0 top-12 w-56 bg-white border border-gray-200 rounded-2xl shadow-2xl py-2 z-50 overflow-hidden">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-2">Switch Demo State</p>
+                    {(['trial', 'subscribed', 'expired', 'admin'] as const).map(m => (
+                      <button key={m} onClick={() => { auth.login(m); setDropOpen(false); }}
+                        className={`block w-full text-left px-3 py-1.5 text-sm rounded-lg mb-0.5 transition-colors ${auth.status === m ? 'bg-yellow-100 font-semibold text-yellow-800' : 'hover:bg-gray-50 text-gray-600'} bg-transparent border-none cursor-pointer`}>
+                        {m.charAt(0).toUpperCase() + m.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => { auth.logout(); navigate('/'); setDropOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 bg-transparent border-none cursor-pointer transition-colors">Log Out</button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Mobile hamburger */}
+        <button className={`md:hidden bg-transparent border-none text-xl cursor-pointer ${isHome ? 'text-white' : 'text-black'}`} onClick={() => setMenuOpen(!menuOpen)}>
+          {menuOpen ? '✕' : '☰'}
+        </button>
+      </div>
+
+      {/* Trial Banner */}
+      {auth.isTrial && auth.isLoggedIn && (
+        <div className="bg-yellow-50 border-b border-yellow-200 text-center py-2 text-sm">
+          <span className="font-semibold text-yellow-800">Free Trial</span>
+          <span className="text-yellow-700"> — {auth.trial?.daysRemaining || 0} days remaining</span>
+          <button onClick={() => navigate('/pricing')} className="ml-3 text-yellow-900 font-bold underline bg-transparent border-none cursor-pointer">Upgrade</button>
+        </div>
+      )}
+
+      {/* Mobile Menu */}
+      {menuOpen && (
+        <div className={`md:hidden px-5 py-5 space-y-2 border-t ${isHome ? 'bg-[#0F0F0F] border-white/10' : 'bg-white border-gray-200'}`}>
+          {[{ l: 'AI Employees', p: '/catalog' }, { l: 'Pricing', p: '/pricing' }, { l: 'Dashboard', p: '/dashboard' }, { l: 'Integrations', p: '/integrations' }, { l: 'Agents', p: '/agents' }, { l: 'Voice', p: '/voice' }, { l: 'Employee Hub', p: '/employee-hub' }, { l: 'Settings', p: '/settings' }].map(i => (
+            <button key={i.p} onClick={() => { navigate(i.p); setMenuOpen(false); }}
+              className={`block w-full text-left py-2.5 px-3 rounded-lg font-medium bg-transparent border-none cursor-pointer ${isHome ? 'text-gray-300 hover:text-white hover:bg-white/[.06]' : 'text-gray-700 hover:bg-gray-50'}`}>{i.l}</button>
+          ))}
+          {!auth.isLoggedIn && <button onClick={() => { navigate('/signup'); setMenuOpen(false); }} className="btn-gold w-full mt-3">Get Started</button>}
+        </div>
+      )}
+    </nav>
+  );
+}
+
+export function Footer() {
+  const navigate = useNavigate();
+  return (
+    <footer className="bg-[#0F0F0F] text-white py-20 px-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-10 mb-16">
+          <div className="col-span-2 md:col-span-1">
+            <div className="flex items-center gap-2 mb-4">
+              <span className="hc text-xl tracking-wider" style={{ letterSpacing: '3px' }}>NEXUSHR</span>
+              <span className="text-[10px] font-bold bg-[#FBCC00] text-[#0F0F0F] px-2 py-0.5 rounded-full">AI</span>
+            </div>
+            <p className="text-sm text-gray-500 leading-relaxed">The enterprise AI workforce platform. Hire, deploy, and manage AI employees at scale.</p>
+          </div>
+          <div>
+            <p className="font-bold text-xs mb-4 uppercase tracking-wider text-gray-400">AI Employees</p>
+            {['Software Engineer', 'Marketing Manager', 'Sales Rep', 'Customer Support'].map(t => (
+              <button key={t} onClick={() => navigate('/catalog')} className="block text-sm text-gray-500 hover:text-white mb-2 bg-transparent border-none cursor-pointer text-left transition-colors">{t}</button>
+            ))}
+          </div>
+          <div>
+            <p className="font-bold text-xs mb-4 uppercase tracking-wider text-gray-400">Platform</p>
+            {[{ l: 'Pricing', p: '/pricing' }, { l: 'Catalog', p: '/catalog' }, { l: 'Dashboard', p: '/dashboard' }].map(i => (
+              <button key={i.l} onClick={() => navigate(i.p)} className="block text-sm text-gray-500 hover:text-white mb-2 bg-transparent border-none cursor-pointer text-left transition-colors">{i.l}</button>
+            ))}
+          </div>
+          <div>
+            <p className="font-bold text-xs mb-4 uppercase tracking-wider text-gray-400">Legal</p>
+            {['Terms of Service', 'Privacy Policy', 'Cookie Policy', 'GDPR'].map(t => (
+              <span key={t} className="block text-sm text-gray-500 mb-2 cursor-pointer hover:text-white transition-colors">{t}</span>
+            ))}
+          </div>
+          <div>
+            <p className="font-bold text-xs mb-4 uppercase tracking-wider text-gray-400">Connect</p>
+            {['Twitter', 'LinkedIn', 'YouTube', 'Discord'].map(t => (
+              <span key={t} className="block text-sm text-gray-500 mb-2 cursor-pointer hover:text-white transition-colors">{t}</span>
+            ))}
+          </div>
+        </div>
+        <div className="border-t border-white/[.06] pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-gray-600">© 2026 NexusHR AI, Inc. All rights reserved.</p>
+          <div className="flex items-center gap-6">
+            {['Privacy', 'Terms', 'Cookies'].map(t => (
+              <span key={t} className="text-xs text-gray-600 cursor-pointer hover:text-gray-400 transition-colors">{t}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+export function ConsumerLayout({ children }: { children: ReactNode }) {
+  return (
+    <>
+      <Navbar />
+      <main>{children}</main>
+      <Footer />
+    </>
+  );
+}

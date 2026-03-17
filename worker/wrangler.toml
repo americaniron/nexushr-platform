@@ -1,0 +1,25 @@
+name = "nexushr-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "production"
+CORS_ORIGIN = "*"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "nexushr-platform"
+database_id = "0f45ef81-1bc2-4143-bc2e-efe623ce4abe"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "951ef1a84c87423e981b418d2b77aa5c"
+
+[[kv_namespaces]]
+binding = "API_KEYS"
+id = "925b2bfc635a424bb3455cd89f5a9890"
+
+[[kv_namespaces]]
+binding = "CACHE"
+id = "0782ecc6f3b1484fa53bd7dd248f29bb"
