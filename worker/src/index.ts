@@ -87,6 +87,7 @@ export interface Env {
   SESSIONS: KVNamespace;
   API_KEYS: KVNamespace;
   CACHE: KVNamespace;
+  ASSETS: Fetcher;
   CORS_ORIGIN: string;
   ENVIRONMENT: string;
 }
@@ -239,6 +240,25 @@ export default {
       }
       if (path.startsWith('/api/admin/')) {
         return addCors(await handleAdmin(request, env, userId, path), env);
+      }
+
+      // Serve frontend SPA for non-API routes
+      if (!path.startsWith('/api/')) {
+        try {
+          const assetResponse = await env.ASSETS.fetch(request);
+          if (assetResponse.status !== 404) {
+            return assetResponse;
+          }
+          // SPA fallback: serve index.html for all non-asset routes
+          const indexRequest = new Request(new URL('/', request.url).toString(), request);
+          return await env.ASSETS.fetch(indexRequest);
+        } catch {
+          // If ASSETS binding not available, return basic HTML redirect
+          return new Response('<html><body><h1>NexusHR Platform</h1><p>API is running. Frontend deployment pending.</p></body></html>', {
+            status: 200,
+            headers: { 'Content-Type': 'text/html' },
+          });
+        }
       }
 
       return addCors(json({ error: 'Not Found', code: 'NOT_FOUND' }, 404), env);
